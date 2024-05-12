@@ -4,12 +4,14 @@ import re #hỗ trợ cho các biểu thức chính quy (regular expressions)
 from tld import get_tld # lấy top level domain (com, xyz, ...)
 import string
 import pandas as pd
+import math
+from collections import Counter
 
 class FeatureExtraction:
   def __init__(self):
     self.alexa_domains = pd.read_csv("top-1m.csv", header=None).iloc[:, 1].values
 
-  def haveIP(self, url):
+  def IpAddress(self, url):
     match = re.search(
         '(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.'
         '([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\/)|'  # IPv4
@@ -20,16 +22,30 @@ class FeatureExtraction:
     else:
         return 0
 
-  def lenURL(self, url):
+  def UrlLength(self, url):
     return len(url)
 
-  def lenHostname(self, url):
+  def HostnameLength(self, url):
     try:
       return len(urlparse(url).hostname)
     except:
       return 0
 
-  def tinyURL(self, url):
+  def PathLength(self, url):
+    try:
+        parsed_url = urlparse(url)
+        return len(parsed_url.path)
+    except:
+        return 0
+
+  def QueryLength(self, url):
+    try:
+        parsed_url = urlparse(url)
+        return len(parsed_url.query)
+    except:
+        return 0
+
+  def UseShortService(self, url):
     #listing shortening services
     shortening_services = r"bit\.ly|goo\.gl|shorte\.st|go2l\.ink|x\.co|ow\.ly|t\.co|tinyurl|tr\.im|is\.gd|cli\.gs|" \
                           r"yfrog\.com|migre\.me|ff\.im|tiny\.cc|url4\.eu|twit\.ac|su\.pr|twurl\.nl|snipurl\.com|" \
@@ -42,16 +58,7 @@ class FeatureExtraction:
 
     return 1 if re.search(shortening_services,url) else 0
 
-  def abnormal_url(self, url):
-    hostname = urlparse(url).hostname
-    hostname = str(hostname).lower()
-    try:
-      match = re.search(hostname, url.lower())
-      return 0 if match else 1
-    except:
-      return 1
-
-  def suspicious_tlds(self, url):
+  def SusTlds(self, url):
     suspicious_tlds = [
       'tk', 'pw', 'info', 'biz', 'xyz', 'top', 'club', 'work', 'online',
       'site', 'website', 'space', 'click', 'link', 'download', 'trade', 'cn'
@@ -65,48 +72,121 @@ class FeatureExtraction:
     except:
       return 1
 
-  def digit_count(self, url):
+  def NumSensitiveWords(self, url):
+    words = ['number', 'update', 'fraud', 'spoof', 'bank', 'banking', 'paypal', 'spoofing', 'credit', 'confirm', 
+            'free', 'webscr', 'payment', 'secure', 'PayPal', 'password', 'bonus', 'identity', 'lucky', 'social', 'money', 'account', 
+            'transfer', 'ebayisapi', 'keylogger', 'card', 'verify', 'sign in', 'ssn', 'service', 'signin', 'login']
+    word_count = sum(url.count(word) for word in words)
+    return word_count
+
+  def NumNumericChars(self, url):
     digits = 0
     for i in url:
         if i.isnumeric():
-            digits = digits + 1
+            digits += 1
     return digits
 
+  def NumDots(self, url):
+    return url.count('.')
 
-  def letter_count(self, url):
-    letters = 0
-    for i in url:
-        if i.isalpha():
-            letters = letters + 1
-    return letters
+  def NumDash(self, url):
+    return url.count('-')
 
-  def special_chars_count(self, url):
-    special_chars = set(string.punctuation)
-    num_special_chars = sum(char in special_chars for char in url)
-    return num_special_chars
+  def NumDashInHostname(self, url):
+    try:
+        url_info = tldextract.extract(url)
+        hostname = url_info.domain
+        return hostname.count('-')
+    except:
+        return 0
+    
+  def NumUnderscore(self, url):
+    return url.count('_')
 
-  def haveAtSign(self, url):
+  def NumPercent(self, url):
+    return url.count("%")
+
+  def NumAmpersand(self, url):
+    return url.count("&")
+
+  def NumHash(self, url):
+    return url.count("#")
+
+  def NumQueryComponents(self, url):
+    try:
+        parsed_url = urlparse(url)
+        return len(parsed_url.query.split('&')) if parsed_url.query else 0
+    except:
+        return 0
+    
+  def AtSymbol(self, url):
     return 1 if "@" in url else 0
 
-  def haveDash(self, url):
-    return 1 if '-' in urlparse(url).netloc else 0
+  def TildeSymbol(self, url):
+    return 1 if "~" in url else 0
 
-  def redirection(self, url):
+  def DoubleSlashInPath(self, url):
     pos = url.rfind('//')
     if pos > 6:
       return 1 if pos > 7 else 0
     return 0
 
-  def subDomains(self, url):
-    url = str(url)
-    url = url.replace("www.", "")
-    url = url.replace("." + tldextract.extract(url).suffix, "")
-    count = url.count(".")
-    return 1 if count > 1 else 0
-  
+  def SubDomainLevel(self, url):
+    try:
+        url_info = tldextract.extract(url)
+        subdomain = url_info.subdomain
+        if subdomain:
+            return subdomain.count('.') + 1
+        else:
+            return 0
+    except:
+        return 0
+
+  def PathLevel(self, url):
+    try:
+        parsed_url = urlparse(url)
+        if parsed_url.path:
+            return parsed_url.path.count('/') + 1
+        else:
+            return 0
+    except:
+        return 0
+
+  def DomainInSubdomains(self, url):
+    try:
+        url_info = tldextract.extract(url)
+        tld = get_tld(url, fail_silently=True)
+        if tld:
+            return 1 if tld in url_info.subdomain else 0
+        else:
+            return 1
+    except:
+        return 1
+
+  def DomainInPaths(self, url):
+    try:
+        parsed_url = urlparse(url)
+        tld = get_tld(url, fail_silently=True)
+        if tld:
+            return 1 if tld in parsed_url.path else 0
+        else:
+            return 1
+    except:
+        return 1
+
+  def EntropyDomainName(self, url):
+    try:
+        hostname = urlparse(url).netloc
+        counter = Counter(hostname)
+        probabilities = [count / len(hostname) for count in counter.values()]
+        return -sum(p * math.log2(p) for p in probabilities)
+    except:
+        return 0
+    
   def rank_host(self, url):
     try:
         domain = tldextract.extract(url).registered_domain
-        return 1 if domain in self.alexa_domains else 0
+        return 0 if domain in self.alexa_domains else 1
     except Exception:
-        return 0
+        return 1
+  
