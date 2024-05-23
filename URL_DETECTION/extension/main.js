@@ -40,13 +40,13 @@ function checkPhishing(url, classname) {
       // Lấy phần tử HTML có class là classname
       var resultDiv = document.getElementsByClassName(classname)[0];
       // Nếu giá trị là một chuỗi, hiển thị nó trong phần tử
-      if (typeof test === "string") {
-        if (test === "độc hại") {
-          resultDiv.innerHTML = "Đây có thể là đường dẫn đến trang web độc hại";
+      if (Array.isArray(test)) {
+        if (test[0]) {
+          resultDiv.innerHTML = `Đường dẫn này có tỉ lệ ${(test[1] * 100).toFixed(2)}% dẫn đến trang web độc hại`;
           resultDiv.style.color = "red";
         }
         else {
-          resultDiv.innerHTML = "Đây có thể là đường dẫn đến trang web an toàn";
+          resultDiv.innerHTML = `Đường dẫn này có tỉ lệ ${(test[1] * 100).toFixed(2)}% dẫn đến trang web an toàn`;
           resultDiv.style.color = "green";
         }
       } else {

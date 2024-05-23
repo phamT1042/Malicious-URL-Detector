@@ -2,7 +2,6 @@ from urllib.parse import urlparse #module của thư viện urllib, được s�
 import tldextract #trích xuất các thành phần của một URL, bao gồm tên miền, tên miền cấp cao nhất (TLD), và tên miền phụ
 import re #hỗ trợ cho các biểu thức chính quy (regular expressions)
 from tld import get_tld # lấy top level domain (com, xyz, ...)
-import string
 import pandas as pd
 import math
 from collections import Counter

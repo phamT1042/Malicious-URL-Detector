@@ -5,11 +5,13 @@ from os import path
 
 file_path = path.abspath(__file__) 
 dir_path = path.dirname(file_path) 
-file_model_path = path.join(dir_path,'URL_Classifier.pkl') 
+file_model_path = path.join(dir_path,'URL_Classifier_XGB.pkl') 
 
 class PredictURL:
     def __init__(self):
-        pass
+        with open(file_model_path, 'rb') as file:  
+            self.model = pickle.load(file)
+        file.close()
 
     def predict(self, url):
         feature = FeatureExtraction()
@@ -24,9 +26,8 @@ class PredictURL:
         return self.classify(test)
     
     def classify(self, features):
-        with open(file_model_path, 'rb') as file:  
-            model = pickle.load(file)
-        file.close()
-        res = model.predict(features)
-        return "độc hại" if int(res[0]) == 1 else "an toàn"
+        res = self.model.predict_proba(features)
+        if res[0][1] > res[0][0]:
+            return (1, float(res[0][1]))
+        return (0, float(res[0][0]))
 
