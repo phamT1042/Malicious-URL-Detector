@@ -1,6 +1,6 @@
 {
     "name": "Malicious URL Detection",
-    "description": "Detect whether website is malicious or not",
+    "description": "Detect URL website is malicious or not",
     "permissions": ["tabs"],
     "version": "1.0",
     "manifest_version": 3,

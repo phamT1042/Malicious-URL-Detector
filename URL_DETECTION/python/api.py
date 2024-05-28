@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 @app.get("/api")
-def hello(url: str=""):
+def check(url: str=""):
   if not validators.url(url):
     return {'msg':'Invalid URL'}
   ans = classification.predict(url)

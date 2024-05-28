@@ -6,8 +6,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var url = tabs[0].url;
     document.getElementById("url-input").value = url;
 
-    // Gọi hàm checkPhishing với URL và một chuỗi "check" làm đối số
-    checkPhishing(url, "check");
+    // Gọi hàm checkMalicious với URL và một chuỗi "check" làm đối số
+    checkMalicious(url, "check");
   });
 
   // Khi người dùng submit form
@@ -17,12 +17,12 @@ document.addEventListener("DOMContentLoaded", function () {
       event.preventDefault();
       // Lấy giá trị của URL từ thẻ input có id là "url-input1"
       var url = document.getElementById("url-input1").value;
-      checkPhishing(url, "result");
+      checkMalicious(url, "result");
     });
 });
 
 // Hàm kiểm tra tính an toàn của URL
-function checkPhishing(url, classname) {
+function checkMalicious(url, classname) {
   // Gửi yêu cầu GET đến một API máy học với URL như là một tham số truy vấn
   fetch(`http://127.0.0.1:8000/api?url=${url}`, {
     method: "GET",
@@ -35,7 +35,6 @@ function checkPhishing(url, classname) {
     .then((data) => {
       // Lấy giá trị đầu tiên từ mảng JSON được trả về
       let test = data[0];
-      // Hiển thị giá trị đầu tiên trong console và kiểu dữ liệu của nó
 
       // Lấy phần tử HTML có class là classname
       var resultDiv = document.getElementsByClassName(classname)[0];
@@ -56,6 +55,6 @@ function checkPhishing(url, classname) {
 
     })
     .catch((error) => {
-      console.error("Error:", error);
+      alert("Error:", error);
     });
 }
